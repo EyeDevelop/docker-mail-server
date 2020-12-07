@@ -1,0 +1,5 @@
+user = 
+password = 
+hosts = 
+dbname = 
+query = SELECT destination FROM aliases WHERE source='%s'
