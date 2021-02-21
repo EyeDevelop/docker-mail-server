@@ -74,7 +74,7 @@ install_postfix() {
     # Link the config directory and
     # install postfix with mysql support.
     ln -s /conf/postfix /etc/postfix
-    apk add -U postfix postfix-mysql
+    apk add -U postfix postfix-mysql postfix-hash
 
     info "Installed Postfix."
     touch /.postfix-installed
@@ -177,6 +177,8 @@ graceful_exit() {
     # Send a SIGTERM to both pids.
     kill -SIGTERM "$postfix_pid"
     kill -SIGTERM "$dovecot_pid"
+
+    echo "[+] Graceful exit of both postfix and dovecot."
 }
 
 main() {
