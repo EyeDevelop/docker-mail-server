@@ -60,6 +60,10 @@ install_dovecot() {
     ln -s /conf/dovecot /etc/dovecot
     apk add -U dovecot dovecot-lmtpd dovecot-mysql
 
+    # Create a user to hold mail with.
+    addgroup -g 5000 vvmail
+    adduser -G vvmail -D -H -u 5000 vvmail
+
     info "Installed Dovecot."
     touch /.dovecot-installed
 }
@@ -81,7 +85,7 @@ install_postfix() {
 }
 
 configure_postfix() {
-    if [[ -f /conf/.postfix_configured ]]; then
+    if [[ -f /conf/.postfix-configured ]]; then
         return
     fi
 
@@ -105,7 +109,7 @@ configure_postfix() {
     newaliases
 
     info "Configured Postfix."
-    touch /conf/.postfix_configured
+    touch /conf/.postfix-configured
 }
 
 configure_dovecot() {
@@ -131,10 +135,6 @@ configure_dovecot() {
         sed -i "s/disable_plaintext_auth .*/disable_plaintext_auth = yes/g" /conf/dovecot/conf.d/10-auth.conf
     fi
 
-    # Create a user to hold mail with.
-    addgroup -g 5000 vvmail
-    adduser -G vvmail -D -H -u 5000 vvmail
-
     # Make sure there is a dummy cert if none available.
     if [[ ! -f /conf/certificates/certificate.pem || ! -f /conf/certificates/key.pem ]]; then
         openssl req -x509 -newkey rsa:2048 -nodes\
@@ -153,22 +153,6 @@ configure_dovecot() {
     touch /conf/.dovecot-configured
 }
 
-run_dovecot() {
-    info "Dovecot is starting..."
-    /usr/sbin/dovecot -F | info_dovecot | tee -a /data/logs/dovecot_daemon.log
-    code="$?"
-    info "Dovecot exited with $code"
-    return "$code"
-}
-
-run_postfix() {
-    info "Postfix is starting..."
-    /usr/sbin/postfix start-fg | info_postfix | tee -a /data/logs/postfix_daemon.log
-    code="$?"
-    info "Postfix exited with $code"
-    return "$code"
-}
-
 graceful_exit() {
     # Get the pids.
     postfix_pid="$1"
@@ -178,7 +162,7 @@ graceful_exit() {
     kill -SIGTERM "$postfix_pid"
     kill -SIGTERM "$dovecot_pid"
 
-    echo "[+] Graceful exit of both postfix and dovecot."
+    info "Graceful exit of both postfix and dovecot."
 }
 
 main() {
@@ -202,10 +186,12 @@ main() {
     # Run both on the background and wait
     # for their exit. Send a SIGTERM to both
     # if sent to this script.
-    run_dovecot &
+    info "Starting dovecot..."
+    (/usr/sbin/dovecot -F | info_dovecot | tee -a /data/logs/dovecot_daemon.log) &
     dovecot_pid="$!"
 
-    run_postfix &
+    info "Starting postfix..."
+    (/usr/sbin/postfix start-fg | info_postfix | tee -a /data/logs/postfix_daemon.log) &
     postfix_pid="$!"
 
     trap 'graceful_exit $postfix_pid $dovecot_pid' SIGTERM SIGINT
