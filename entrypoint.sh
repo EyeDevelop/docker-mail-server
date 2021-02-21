@@ -212,11 +212,6 @@ main() {
     wait "$postfix_pid"
     wait "$dovecot_pid"
 
-    # Make sure Dovecot gracefully exits when Postfix does.
-    # Make sure Postfix also exits.
-    pkill "/usr/sbin/dovecot"
-    pkill "/usr/sbin/postfix"
-
     exit 0
 }
 
