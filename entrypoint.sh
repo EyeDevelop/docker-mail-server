@@ -74,7 +74,7 @@ install_postfix() {
     # Link the config directory and
     # install postfix with mysql support.
     ln -s /conf/postfix /etc/postfix
-    apk add -U postfix postfix-mysql postfix-hash
+    apk add -U postfix postfix-mysql
 
     info "Installed Postfix."
     touch /.postfix-installed
