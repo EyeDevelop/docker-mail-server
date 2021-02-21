@@ -81,7 +81,7 @@ install_postfix() {
 }
 
 configure_postfix() {
-    if [[ -f /.postfix_configured ]]; then
+    if [[ -f /conf/.postfix_configured ]]; then
         return
     fi
 
@@ -105,11 +105,11 @@ configure_postfix() {
     newaliases
 
     info "Configured Postfix."
-    touch /.postfix_configured
+    touch /conf/.postfix_configured
 }
 
 configure_dovecot() {
-    if [[ -f /.dovecot-configured ]]; then
+    if [[ -f /conf/.dovecot-configured ]]; then
         return
     fi
 
@@ -150,7 +150,7 @@ configure_dovecot() {
     fi
 
     info "Configured Dovecot."
-    touch /.dovecot-configured
+    touch /conf/.dovecot-configured
 }
 
 run_dovecot() {
