@@ -156,15 +156,27 @@ configure_dovecot() {
 run_dovecot() {
     info "Dovecot is starting..."
     /usr/sbin/dovecot -F | info_dovecot | tee -a /data/logs/dovecot_daemon.log
-    info "Dovecot exited with $?"
-    return "$?"
+    code="$?"
+    info "Dovecot exited with $code"
+    return "$code"
 }
 
 run_postfix() {
     info "Postfix is starting..."
     /usr/sbin/postfix start-fg | info_postfix | tee -a /data/logs/postfix_daemon.log
-    info "Postfix exited with $?"
-    return "$?"
+    code="$?"
+    info "Postfix exited with $code"
+    return "$code"
+}
+
+graceful_exit() {
+    # Get the pids.
+    postfix_pid="$1"
+    dovecot_pid="$2"
+
+    # Send a SIGTERM to both pids.
+    kill -SIGTERM "$postfix_pid"
+    kill -SIGTERM "$dovecot_pid"
 }
 
 main() {
@@ -185,10 +197,20 @@ main() {
     # Also check permissions of these directories.
     check_permissions
 
-    # Run Dovecot on the background and
-    # Postfix on the foreground.
+    # Run both on the background and wait
+    # for their exit. Send a SIGTERM to both
+    # if sent to this script.
     run_dovecot &
-    run_postfix
+    dovecot_pid="$!"
+
+    run_postfix &
+    postfix_pid="$!"
+
+    trap 'graceful_exit $postfix_pid $dovecot_pid' SIGTERM SIGINT
+
+    # Wait for both to gracefully exit.
+    wait "$postfix_pid"
+    wait "$dovecot_pid"
 
     # Make sure Dovecot gracefully exits when Postfix does.
     # Make sure Postfix also exits.
