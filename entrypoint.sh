@@ -183,6 +183,12 @@ main() {
     # Also check permissions of these directories.
     check_permissions
 
+    # Sometimes Dovecot leaves a master.pid behind after exit.
+    # Remove if it exists.
+    if [[ -f "/run/dovecot/master.pid" ]]; then
+        rm -f "/run/dovecot/master.pid"
+    fi
+
     # Run both on the background and wait
     # for their exit. Send a SIGTERM to both
     # if sent to this script.
